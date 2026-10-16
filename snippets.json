@@ -8,6 +8,15 @@
       "endfor"
     ]
   },
+  "for-range": {
+    "prefix": "for",
+    "description": "for loop over 1:n",
+    "body": [
+      "for ${1:i} = 1:${2:n}",
+      "  $0",
+      "endfor"
+    ]
+  },
   "while-loop": {
     "prefix": "while",
     "body": [
@@ -104,6 +113,60 @@
       "  ",
       "endfunction",
       ""
+    ]
+  },
+  "if": {
+    "prefix": "if",
+    "description": "if block",
+    "body": [
+      "if ${1:cond}",
+      "  $0",
+      "endif"
+    ]
+  },
+  "if-else": {
+    "prefix": "if",
+    "description": "if/else block",
+    "body": [
+      "if ${1:cond}",
+      "  $2",
+      "else",
+      "  $0",
+      "endif"
+    ]
+  },
+  "if-elseif": {
+    "prefix": "if",
+    "description": "if/elseif/else block",
+    "body": [
+      "if ${1:cond}",
+      "  $2",
+      "elseif ${3:cond}",
+      "  $4",
+      "else",
+      "  $0",
+      "endif"
+    ]
+  },
+  "switch": {
+    "prefix": "switch",
+    "description": "switch block",
+    "body": [
+      "switch ${1:expr}",
+      "  case ${2:value}",
+      "    $3",
+      "  otherwise",
+      "    $0",
+      "endswitch"
+    ]
+  },
+  "do-until": {
+    "prefix": "do",
+    "description": "do/until loop",
+    "body": [
+      "do",
+      "  $0",
+      "until ${1:cond}"
     ]
   }
 }

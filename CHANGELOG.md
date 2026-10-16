@@ -10,6 +10,19 @@ In this document, "the syntax" refers to the Octave M-code syntax definition ins
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-16
+
+### Added
+
+* Completion items for every documented call form, with parameter tab stops.
+* Snippets for `if`, `if`/`else`, `if`/`elseif`, `switch`, `do`/`until` and `for i = 1:n`.
+
+## [0.3.0] - 2026-10-16
+
+### Added
+
+* Hover documentation for the control and symbolic packages and for the most used core Octave functions, precompiled into `docs/octave-docs.json`.
+
 ## [0.2.14] - 2022-09-12
 
 ### Fixed

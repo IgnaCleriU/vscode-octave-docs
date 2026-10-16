@@ -3,6 +3,7 @@ import {
 	HELP_SCHEME, OctaveDocs, OctaveHelpContentProvider, OctaveHoverProvider,
 	SHOW_HELP_COMMAND, showFullHelp,
 } from './hover';
+import { OctaveCompletionProvider } from './completion';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Octave Hacking extension activating');
@@ -15,6 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.languages.registerHoverProvider({language: 'octave'}, new OctaveHoverProvider(docs)),
 		vscode.workspace.registerTextDocumentContentProvider(HELP_SCHEME, new OctaveHelpContentProvider(docs)),
 		vscode.commands.registerCommand(SHOW_HELP_COMMAND, showFullHelp),
+		vscode.languages.registerCompletionItemProvider({language: 'octave'}, new OctaveCompletionProvider(docs)),
 	);
 	console.log('Octave Hacking extension activated');
 }

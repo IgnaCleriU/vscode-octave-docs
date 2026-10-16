@@ -1,26 +1,43 @@
 # Octave Docs
 
-Fork de [Octave Hacking](https://github.com/apjanke/vscode-octave-hacking) que agrega **documentación al pasar el mouse** sobre funciones de Octave.
+A fork of [Octave Hacking](https://github.com/apjanke/vscode-octave-hacking) that adds **hover documentation** and **signature-aware completion** for Octave functions.
 
-## Documentación en hover
+## Hover documentation
 
-Al pasar el mouse sobre una función se muestra su ayuda (la misma que `help`), con un link para abrirla completa en una pestaña. Si el nombre tiene varias definiciones —por ejemplo `diff` de Octave y `@sym/diff`— se listan todas.
+Hovering over a function shows its help text (the same as `help`), with a link to open the full text in a side tab. If the name has several definitions (for example, core `diff` and `@sym/diff`), all of them are listed.
 
-Cubre:
+## Completion with parameter tab stops
 
-* Todas las funciones públicas del paquete **control**, incluidos los métodos de `@tf`, `@ss`, `@lti`, etc.
-* Todas las del paquete **symbolic**, incluidos los métodos de `@sym` y `@symfun`.
-* Una lista de las funciones básicas de Octave más usadas (matrices, álgebra lineal, polinomios, gráficos, E/S).
+Typing a function name suggests one completion item per call form documented in its help. Accepting one inserts the call with its parameters as placeholders, and <kbd>Tab</kbd> jumps from one parameter to the next:
 
-La ayuda está precompilada en `docs/octave-docs.json`, así que el hover es instantáneo y no necesita Octave en tiempo de uso. Para regenerarla, con los paquetes instalados:
-
-```sh
-npm run build-docs   # octave --no-gui --quiet scripts/build-docs.m (tarda unos minutos)
+```text
+rlocus  →  rlocus(sys, increment, min_k, max_k)
+tf      →  tf(num, den)
+laplace →  laplace(f, t, s)
+syms    →  syms x y ...
 ```
 
-La lista de funciones básicas está al final de `scripts/build-docs.m`.
+Parameter names come from the help, lowercased. If a `(` already follows the cursor, only the name is inserted.
 
-## Compilar e instalar
+The control-structure snippets (`for`, `while`, `if`, `switch`, `do`, `try`, `function`, ...) work the same way.
+
+## Coverage
+
+* Every public function of the **control** package, including the methods of `@tf`, `@ss`, `@lti`, etc.
+* Every function of the **symbolic** package, including the methods of `@sym` and `@symfun`.
+* A curated list of the most used core Octave functions (matrices, linear algebra, polynomials, ODEs, plotting, I/O).
+
+## Precompiled help
+
+The help is precompiled into `docs/octave-docs.json`, so hover and completion are instant and do not need Octave at runtime. To regenerate it, with both packages installed:
+
+```sh
+npm run build-docs   # octave --no-gui --quiet scripts/build-docs.m (takes a few minutes)
+```
+
+The list of core functions is at the end of `scripts/build-docs.m`.
+
+## Build and install
 
 ```sh
 npm install
@@ -28,11 +45,11 @@ npx @vscode/vsce package
 code --install-extension octave-docs-*.vsix
 ```
 
-Si está instalada otra extensión que registre los `.m` como Octave (por ejemplo `toasty-technologies.octave`), conviene desinstalarla.
+If another extension that registers `.m` files as Octave is installed (for example `toasty-technologies.octave`), uninstall it.
 
 ---
 
-## Octave Hacking (README original)
+## Octave Hacking (original README)
 
 Octave Hacking is an attempt to turn VS Code into a decent IDE for [GNU Octave](https://www.gnu.org/software/octave/).
 
