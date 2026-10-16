@@ -1,10 +1,21 @@
 import * as vscode from 'vscode';
+import {
+	HELP_SCHEME, OctaveDocs, OctaveHelpContentProvider, OctaveHoverProvider,
+	SHOW_HELP_COMMAND, showFullHelp,
+} from './hover';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Octave Hacking extension activating');
 	context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(
 		{language: 'octave'}, new OctaveDocumentSymbolProvider()
 	));
+
+	const docs = new OctaveDocs(context.extensionPath);
+	context.subscriptions.push(
+		vscode.languages.registerHoverProvider({language: 'octave'}, new OctaveHoverProvider(docs)),
+		vscode.workspace.registerTextDocumentContentProvider(HELP_SCHEME, new OctaveHelpContentProvider(docs)),
+		vscode.commands.registerCommand(SHOW_HELP_COMMAND, showFullHelp),
+	);
 	console.log('Octave Hacking extension activated');
 }
 

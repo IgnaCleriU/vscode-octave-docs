@@ -10,7 +10,7 @@
 dist:
 	mkdir -p dist
 	vsce package
-	mv octave-hacking-* dist
+	mv octave-docs-* dist
 
 .PHONY: clean
 clean:

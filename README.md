@@ -1,4 +1,38 @@
-# Octave Hacking
+# Octave Docs
+
+Fork de [Octave Hacking](https://github.com/apjanke/vscode-octave-hacking) que agrega **documentación al pasar el mouse** sobre funciones de Octave.
+
+## Documentación en hover
+
+Al pasar el mouse sobre una función se muestra su ayuda (la misma que `help`), con un link para abrirla completa en una pestaña. Si el nombre tiene varias definiciones —por ejemplo `diff` de Octave y `@sym/diff`— se listan todas.
+
+Cubre:
+
+* Todas las funciones públicas del paquete **control**, incluidos los métodos de `@tf`, `@ss`, `@lti`, etc.
+* Todas las del paquete **symbolic**, incluidos los métodos de `@sym` y `@symfun`.
+* Una lista de las funciones básicas de Octave más usadas (matrices, álgebra lineal, polinomios, gráficos, E/S).
+
+La ayuda está precompilada en `docs/octave-docs.json`, así que el hover es instantáneo y no necesita Octave en tiempo de uso. Para regenerarla, con los paquetes instalados:
+
+```sh
+npm run build-docs   # octave --no-gui --quiet scripts/build-docs.m (tarda unos minutos)
+```
+
+La lista de funciones básicas está al final de `scripts/build-docs.m`.
+
+## Compilar e instalar
+
+```sh
+npm install
+npx @vscode/vsce package
+code --install-extension octave-docs-*.vsix
+```
+
+Si está instalada otra extensión que registre los `.m` como Octave (por ejemplo `toasty-technologies.octave`), conviene desinstalarla.
+
+---
+
+## Octave Hacking (README original)
 
 Octave Hacking is an attempt to turn VS Code into a decent IDE for [GNU Octave](https://www.gnu.org/software/octave/).
 
