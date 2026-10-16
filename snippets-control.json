@@ -1,0 +1,158 @@
+{
+  "header": {
+    "prefix": "oc-header",
+    "description": "Script header: clear, close all, load control (optionally symbolic)",
+    "body": [
+      "clear; clc; close all;",
+      "pkg load control",
+      "${1|pkg load symbolic,% symbolic not needed|}",
+      "$0"
+    ]
+  },
+  "tf": {
+    "prefix": "oc-tf",
+    "description": "Transfer function from numerator and denominator vectors",
+    "body": [
+      "${1:G} = tf(${2:1}, ${3:[1 2 5]});",
+      "$0"
+    ]
+  },
+  "tfs": {
+    "prefix": "oc-tfs",
+    "description": "Transfer function in the Laplace variable s",
+    "body": [
+      "s = tf('s');",
+      "${1:G} = ${2:1/(s^2 + 2*s + 5)};",
+      "$0"
+    ]
+  },
+  "ss": {
+    "prefix": "oc-ss",
+    "description": "State-space model ss(A, B, C, D)",
+    "body": [
+      "${1:sys} = ss(${2:[0 1; -5 -2]}, ${3:[0; 1]}, ${4:[1 0]}, ${5:0});",
+      "$0"
+    ]
+  },
+  "response": {
+    "prefix": "oc-response",
+    "description": "Step or impulse response plot (choice)",
+    "body": [
+      "figure;",
+      "${1|step,impulse|}(${2:G});",
+      "grid on;",
+      "title('${3:Response}');",
+      "$0"
+    ]
+  },
+  "lsim": {
+    "prefix": "oc-lsim",
+    "description": "Simulate response to an input signal with lsim",
+    "body": [
+      "figure;",
+      "t = ${1:0:0.01:5};",
+      "u = ${2:ones(size(t))};",
+      "lsim(${3:G}, u, t);",
+      "grid on;",
+      "title('${4:Linear simulation}');",
+      "$0"
+    ]
+  },
+  "bode": {
+    "prefix": "oc-bode",
+    "description": "Bode diagram",
+    "body": [
+      "figure;",
+      "bode(${1:G});",
+      "grid on;",
+      "$0"
+    ]
+  },
+  "nyquist": {
+    "prefix": "oc-nyquist",
+    "description": "Nyquist diagram",
+    "body": [
+      "figure;",
+      "nyquist(${1:G});",
+      "grid on;",
+      "title('${2:Nyquist diagram}');",
+      "$0"
+    ]
+  },
+  "rlocus": {
+    "prefix": "oc-rlocus",
+    "description": "Root locus",
+    "body": [
+      "figure;",
+      "rlocus(${1:G});",
+      "grid on;",
+      "title('${2:Root locus}');",
+      "$0"
+    ]
+  },
+  "margin": {
+    "prefix": "oc-margin",
+    "description": "Gain and phase margins with margin(), printed in dB and degrees",
+    "body": [
+      "[Gm, Pm, Wcg, Wcp] = margin(${1:G});",
+      "printf('Gm = %g dB (at %g rad/s), Pm = %g deg (at %g rad/s)\\n', 20*log10(Gm), Wcg, Pm, Wcp);",
+      "$0"
+    ]
+  },
+  "feedback": {
+    "prefix": "oc-feedback",
+    "description": "Closed loop with feedback(G, H)",
+    "body": [
+      "${1:Gcl} = feedback(${2:G}, ${3:1});",
+      "$0"
+    ]
+  },
+  "pzmap": {
+    "prefix": "oc-pzmap",
+    "description": "Pole-zero map",
+    "body": [
+      "figure;",
+      "pzmap(${1:G});",
+      "grid on;",
+      "title('${2:Pole-zero map}');",
+      "$0"
+    ]
+  },
+  "laplace": {
+    "prefix": "oc-laplace",
+    "description": "Laplace transform of f(t) with symbolic",
+    "body": [
+      "syms t s",
+      "${1:F} = laplace(${2:exp(-2*t)}, t, s)",
+      "$0"
+    ]
+  },
+  "ilaplace": {
+    "prefix": "oc-ilaplace",
+    "description": "Inverse Laplace transform of F(s) with symbolic",
+    "body": [
+      "syms t s",
+      "${1:f} = ilaplace(${2:1/(s + 1)}, s, t)",
+      "$0"
+    ]
+  },
+  "syms2tf": {
+    "prefix": "oc-syms2tf",
+    "description": "Symbolic rational expression in s to tf(num, den)",
+    "body": [
+      "syms s",
+      "${1:H} = ${2:(s + 1)/(s^2 + 2*s + 5)};",
+      "[${3:num}, ${4:den}] = numden(${1:H});",
+      "${5:G} = tf(sym2poly(${3:num}), sym2poly(${4:den}))",
+      "$0"
+    ]
+  },
+  "section": {
+    "prefix": "oc-section",
+    "description": "Cell section (%% Title)",
+    "body": [
+      "%% ${1:Title}",
+      "$0"
+    ]
+  }
+}

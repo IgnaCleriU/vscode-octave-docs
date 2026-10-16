@@ -10,6 +10,24 @@ In this document, "the syntax" refers to the Octave M-code syntax definition ins
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-16
+
+### Added
+
+* Signature help with active-parameter highlighting.
+* Hover, completion and Go to Definition for the user's own functions and variables.
+* Run File, Run Section (with CodeLens) and Run Selection commands in a persistent Octave terminal.
+* Missing `pkg load` warnings with a quick fix.
+* Syntax errors reported by Octave's parser on open and save.
+* Control snippets (`oc-*`), verified by running them.
+* Folding for `%%` cells, blocks and block comments; outline with full ranges and cells.
+* `Ctrl+}` toggles line comments.
+
+### Changed
+
+* Line comments use `%`; indentation rules for Octave blocks.
+* Completion is not offered inside strings or after a `.`.
+
 ## [0.5.0] - 2026-10-16
 
 ### Changed

@@ -4,48 +4,57 @@ import {
 	SHOW_HELP_COMMAND, showFullHelp,
 } from './hover';
 import { OctaveCompletionProvider } from './completion';
+import { OctaveSignatureHelpProvider, SIGNATURE_RETRIGGERS, SIGNATURE_TRIGGERS } from './signatureHelp';
+import { registerPkgDiagnostics } from './pkgDiagnostics';
+import { registerRunCommands } from './run';
+import { registerSyntaxCheck } from './syntaxCheck';
+import { OctaveDocumentSymbolProvider, OctaveFoldingRangeProvider } from './symbols';
+import {
+	OctaveDefinitionProvider, UserCompletionProvider, WorkspaceIndex, userFunctionHover, variableHover,
+} from './workspace';
 
-export function activate(context: vscode.ExtensionContext) {
-	console.log('Octave Hacking extension activating');
-	context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(
-		{language: 'octave'}, new OctaveDocumentSymbolProvider()
-	));
+const OCTAVE: vscode.DocumentSelector = { language: 'octave' };
 
-	const docs = new OctaveDocs(context.extensionPath);
-	context.subscriptions.push(
-		vscode.languages.registerHoverProvider({language: 'octave'}, new OctaveHoverProvider(docs)),
-		vscode.workspace.registerTextDocumentContentProvider(HELP_SCHEME, new OctaveHelpContentProvider(docs)),
-		vscode.commands.registerCommand(SHOW_HELP_COMMAND, showFullHelp),
-		vscode.languages.registerCompletionItemProvider({language: 'octave'}, new OctaveCompletionProvider(docs)),
-	);
-	console.log('Octave Hacking extension activated');
+/**
+ * Hover in order of precedence: the user's variables hide functions of the
+ * same name, and the user's own functions hide built-in ones.
+ */
+class CombinedHoverProvider implements vscode.HoverProvider {
+	constructor(private index: WorkspaceIndex, private builtin: OctaveHoverProvider) {}
+
+	provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | undefined {
+		const range = document.getWordRangeAtPosition(position, /[A-Za-z_][A-Za-z0-9_]*/);
+		if (!range) { return undefined; }
+		const word = document.getText(range);
+		return variableHover(document, position, word)
+			?? userFunctionHover(this.index, document, position, word)
+			?? this.builtin.provideHover(document, position);
+	}
 }
 
-class OctaveDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
+export function activate(context: vscode.ExtensionContext) {
+	const docs = new OctaveDocs(context.extensionPath);
+	const index = new WorkspaceIndex();
 
-	public provideDocumentSymbols(document: vscode.TextDocument,
-					token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
-		return new Promise((resolve, reject) => {
-			var symbols = [];
+	context.subscriptions.push(
+		index,
+		vscode.languages.registerDocumentSymbolProvider(OCTAVE, new OctaveDocumentSymbolProvider()),
+		vscode.languages.registerFoldingRangeProvider(OCTAVE, new OctaveFoldingRangeProvider()),
+		vscode.languages.registerHoverProvider(OCTAVE, new CombinedHoverProvider(index, new OctaveHoverProvider(docs))),
+		vscode.workspace.registerTextDocumentContentProvider(HELP_SCHEME, new OctaveHelpContentProvider(docs)),
+		vscode.commands.registerCommand(SHOW_HELP_COMMAND, showFullHelp),
+		vscode.languages.registerCompletionItemProvider(OCTAVE, new OctaveCompletionProvider(docs)),
+		vscode.languages.registerCompletionItemProvider(OCTAVE, new UserCompletionProvider(index)),
+		vscode.languages.registerSignatureHelpProvider(OCTAVE, new OctaveSignatureHelpProvider(docs), {
+			triggerCharacters: SIGNATURE_TRIGGERS,
+			retriggerCharacters: SIGNATURE_RETRIGGERS,
+		}),
+		vscode.languages.registerDefinitionProvider(OCTAVE, new OctaveDefinitionProvider(index)),
+	);
 
-			for (var i = 0; i < document.lineCount; i++) {
-				var line = document.lineAt(i);
-				var pat = new RegExp('^\\s*function\\s+((?:[\\[\\]\\s\\w_,~]*?\\s*=)?\\s*([\\w\\.]+).*)');
-				if (pat.test(line.text)) {
-					var match = line.text.match(pat);
-					let details = match![1];
-					let name = match![2];
-					let docSym = new vscode.DocumentSymbol(
-						name, details, vscode.SymbolKind.Function, line.range, line.range
-					);
-					symbols.push(docSym);
-				}
-			}
-
-			resolve(symbols);
-		});
-	}
-
+	registerPkgDiagnostics(context, docs);
+	registerRunCommands(context);
+	registerSyntaxCheck(context);
 }
 
 export function deactivate() {}

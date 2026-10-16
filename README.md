@@ -21,6 +21,46 @@ Parameter names come from the help, lowercased. If a `(` already follows the cur
 
 The control-structure snippets (`for`, `while`, `if`, `switch`, `do`, `try`, `function`, ...) work the same way.
 
+## Signature help
+
+While typing the arguments of a call, a popup shows the matching signatures and highlights the current parameter, as in other languages. It follows the commas at the call's own level, so nested calls and matrices do not confuse it.
+
+## Your own code
+
+* **Functions in the workspace**: every `function` in the workspace's `.m` files (and every script, by its file name) gets hover with its signature and help comment, completion with parameter tab stops, and *Go to Definition* (<kbd>F12</kbd>). Unsaved edits are taken into account.
+* **Variables**: hovering over a variable shows where it is defined instead of the docs of a function with the same name (so `e`, `i` or `step` used as variables are not mistaken for built-ins). Variables defined earlier in the same scope, including `syms` and `for` variables, are offered as completions.
+
+## Running code
+
+| Command | Shortcut | What it runs |
+|---|---|---|
+| Octave: Run File | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>, ▶ in the title bar | The whole file, with `run`, so it runs in its own folder |
+| Octave: Run Section | <kbd>Ctrl</kbd>+<kbd>Enter</kbd>, or the *▶ Run section* CodeLens | The current `%%` cell |
+| Octave: Run Selection or Line | <kbd>Shift</kbd>+<kbd>Enter</kbd> | The selection, or the current line |
+
+Code runs in a persistent *Octave* terminal, so variables survive between runs. Sections and selections are written to a temporary file and run with `source` from the document's folder.
+
+## Diagnostics
+
+* **Missing `pkg load`**: using a function from `control` or `symbolic` in a file that never loads that package is flagged, with a quick fix that inserts `pkg load control` (or `symbolic`) after the usual `clear; clc; close all` header.
+* **Syntax errors**: when a file is opened or saved, Octave parses it with `__parse_file__` (the code is parsed, never executed) and syntax errors are shown in place.
+
+## Editing
+
+* <kbd>Ctrl</kbd>+<kbd>}</kbd> toggles `%` line comments (the physical key right of <kbd>{</kbd> on a Latin American layout; it is the <kbd>\\</kbd> key on US layouts).
+* Indentation follows blocks (`if`, `for`, `function`, ... and their `end`), and `%%` cells, functions, blocks and `%{ %}` comments can be folded.
+* The outline shows `%%` cells and functions with their full range, so breadcrumbs and sticky scroll work.
+* Control snippets, all starting with `oc-`: `oc-header`, `oc-tf`, `oc-tfs`, `oc-ss`, `oc-response` (step/impulse), `oc-lsim`, `oc-bode`, `oc-nyquist`, `oc-rlocus`, `oc-margin`, `oc-feedback`, `oc-pzmap`, `oc-laplace`, `oc-ilaplace`, `oc-syms2tf`, `oc-section`. Each one was checked by running it in Octave 11.3.
+
+## Settings
+
+| Setting | Default | |
+|---|---|---|
+| `octaveDocs.octavePath` | `octave` | Octave executable used to run code and to check syntax |
+| `octaveDocs.run.codeLens` | `true` | *Run section* CodeLens on `%%` lines |
+| `octaveDocs.diagnostics.syntax` | `true` | Syntax check on open and save |
+| `octaveDocs.diagnostics.pkgLoad` | `true` | Missing `pkg load` warnings |
+
 ## Coverage
 
 * Every public function of the **control** package, including the methods of `@tf`, `@ss`, `@lti`, etc.
@@ -64,6 +104,8 @@ Octave Hacking is an attempt to turn VS Code into a decent IDE for [GNU Octave](
   * Functions, classdefs, and some common control structures
 
 ## Installation
+
+*(Original Octave Hacking instructions. Octave Docs is not on the Marketplace: build and install it as described in [Build and install](#build-and-install).)*
 
 To install Octave Hacking in your VS Code, [get it on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=apjanke.octave-hacking), or search for "octave hacking" in the Extensions tab of VS Code.
 

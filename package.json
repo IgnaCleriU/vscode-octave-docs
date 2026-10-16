@@ -6,7 +6,7 @@
 	"author": {
 		"name": "IgnaCleriU"
 	},
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/IgnaCleriU/vscode-octave-docs"
@@ -23,7 +23,10 @@
 	],
 	"icon": "images/octave-hacking-logo.png",
 	"activationEvents": [
-		"onLanguage:octave"
+		"onLanguage:octave",
+		"onCommand:octaveDocs.runFile",
+		"onCommand:octaveDocs.runSelection",
+		"onCommand:octaveDocs.runSection"
 	],
 	"main": "./out/main.js",
 	"contributes": {
@@ -54,8 +57,103 @@
 			{
 				"language": "octave",
 				"path": "./snippets.json"
+			},
+			{
+				"language": "octave",
+				"path": "./snippets-control.json"
 			}
-		]
+		],
+		"commands": [
+			{
+				"command": "octaveDocs.runFile",
+				"title": "Run File",
+				"category": "Octave",
+				"icon": "$(play)"
+			},
+			{
+				"command": "octaveDocs.runSelection",
+				"title": "Run Selection or Line",
+				"category": "Octave"
+			},
+			{
+				"command": "octaveDocs.runSection",
+				"title": "Run Section",
+				"category": "Octave"
+			}
+		],
+		"menus": {
+			"editor/title/run": [
+				{
+					"command": "octaveDocs.runFile",
+					"when": "editorLangId == octave",
+					"group": "navigation"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "octaveDocs.runFile",
+					"when": "editorLangId == octave",
+					"group": "Octave@1"
+				},
+				{
+					"command": "octaveDocs.runSelection",
+					"when": "editorLangId == octave",
+					"group": "Octave@2"
+				},
+				{
+					"command": "octaveDocs.runSection",
+					"when": "editorLangId == octave",
+					"group": "Octave@3"
+				}
+			]
+		},
+		"keybindings": [
+			{
+				"command": "octaveDocs.runFile",
+				"key": "ctrl+shift+enter",
+				"when": "editorTextFocus && editorLangId == octave"
+			},
+			{
+				"command": "octaveDocs.runSelection",
+				"key": "shift+enter",
+				"when": "editorTextFocus && editorLangId == octave"
+			},
+			{
+				"command": "octaveDocs.runSection",
+				"key": "ctrl+enter",
+				"when": "editorTextFocus && editorLangId == octave"
+			},
+			{
+				"command": "editor.action.commentLine",
+				"key": "ctrl+[Backslash]",
+				"when": "editorTextFocus && editorLangId == octave && !editorReadonly"
+			}
+		],
+		"configuration": {
+			"title": "Octave Docs",
+			"properties": {
+				"octaveDocs.octavePath": {
+					"type": "string",
+					"default": "octave",
+					"description": "Octave executable used to run code and to check syntax."
+				},
+				"octaveDocs.run.codeLens": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show a \"Run section\" CodeLens on each %% cell delimiter."
+				},
+				"octaveDocs.diagnostics.syntax": {
+					"type": "boolean",
+					"default": true,
+					"description": "Report Octave syntax errors when a .m file is opened or saved. The code is parsed, not executed."
+				},
+				"octaveDocs.diagnostics.pkgLoad": {
+					"type": "boolean",
+					"default": true,
+					"description": "Warn when a control or symbolic function is used in a file that does not load its package (pkg load)."
+				}
+			}
+		}
 	},
 	"scripts": {
 		"esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",

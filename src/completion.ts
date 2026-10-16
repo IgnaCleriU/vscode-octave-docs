@@ -18,7 +18,7 @@ function escapeRegExp(s: string): string {
 }
 
 /** Splits an argument list at top-level commas, respecting brackets and quotes. */
-function splitArgs(s: string): string[] {
+export function splitArgs(s: string): string[] {
 	const args: string[] = [];
 	let depth = 0;
 	let quote: string | null = null;
@@ -44,7 +44,7 @@ function splitArgs(s: string): string[] {
 }
 
 /** Index of the parenthesis closing the one at `open`, or -1. */
-function closingParen(s: string, open: number): number {
+export function closingParen(s: string, open: number): number {
 	let depth = 0;
 	let quote: string | null = null;
 	for (let i = open; i < s.length; i++) {
@@ -107,7 +107,7 @@ export function snippetText(form: CallForm): string {
 }
 
 /** First paragraph of the Markdown description. */
-function summary(e: DocEntry): string {
+export function summary(e: DocEntry): string {
 	const first = e.markdown.split(/\n\s*\n/).find(p => p.trim() !== '' && !p.startsWith('```'));
 	return first ? first.trim() : '';
 }
@@ -165,11 +165,43 @@ export class OctaveCompletionProvider implements vscode.CompletionItemProvider {
 	provideCompletionItems(document: vscode.TextDocument,
 						   position: vscode.Position): vscode.CompletionItem[] {
 		const line = document.lineAt(position.line).text;
-		if (inComment(line, position.character)) { return []; }
+		if (inComment(line, position.character) || inString(line, position.character)) {
+			return [];
+		}
 		const word = document.getWordRangeAtPosition(position, /[A-Za-z_][A-Za-z0-9_]*/);
+		const start = word ? word.start.character : position.character;
+		// Field or method access (`s.tf`, `obj.diff`): no names from the global scope
+		if (/[A-Za-z_)\]}']\.$/.test(line.slice(0, start))) { return []; }
 		const after = line.slice(word ? word.end.character : position.character);
 		return /^\s*\(/.test(after) ? this.plain : this.snippets;
 	}
+}
+
+/**
+ * True if the column falls inside a '...' or "..." literal. An apostrophe
+ * after an identifier, ), ], }, . or ' is a transpose, not a string.
+ */
+export function inString(line: string, character: number): boolean {
+	let quote: string | null = null;
+	for (let i = 0; i < character && i < line.length; i++) {
+		const c = line[i];
+		if (quote) {
+			if (c === '\\' && quote === '"') {
+				i++;	// Escaped character in a double-quoted string
+			} else if (c === quote) {
+				// A doubled quote is an escaped quote inside the string
+				if (line[i + 1] === quote) { i++; } else { quote = null; }
+			}
+		} else if (c === '"') {
+			quote = c;
+		} else if (c === "'") {
+			const prev = line.slice(0, i).trimEnd().slice(-1);
+			if (!/[\w)\]}.']/.test(prev)) { quote = c; }
+		} else if (c === '%' || c === '#') {
+			return false;	// The rest of the line is a comment
+		}
+	}
+	return quote !== null;
 }
 
 function kind(e: DocEntry): vscode.CompletionItemKind {
