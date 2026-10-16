@@ -6,7 +6,7 @@
 	"author": {
 		"name": "IgnaCleriU"
 	},
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/IgnaCleriU/vscode-octave-docs"
@@ -43,7 +43,11 @@
 					"PKG_ADD",
 					"PKG_DEL"
 				],
-				"configuration": "./language-configuration.json"
+				"configuration": "./language-configuration.json",
+				"icon": {
+					"light": "./images/octave-file.svg",
+					"dark": "./images/octave-file.svg"
+				}
 			}
 		],
 		"grammars": [
@@ -152,6 +156,11 @@
 					"default": true,
 					"description": "Warn when a control or symbolic function is used in a file that does not load its package (pkg load)."
 				}
+			}
+		},
+		"configurationDefaults": {
+			"[octave]": {
+				"editor.semanticHighlighting.enabled": true
 			}
 		}
 	},

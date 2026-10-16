@@ -45,10 +45,15 @@ Code runs in a persistent *Octave* terminal, so variables survive between runs. 
 * **Missing `pkg load`**: using a function from `control` or `symbolic` in a file that never loads that package is flagged, with a quick fix that inserts `pkg load control` (or `symbolic`) after the usual `clear; clc; close all` header.
 * **Syntax errors**: when a file is opened or saved, Octave parses it with `__parse_file__` (the code is parsed, never executed) and syntax errors are shown in place.
 
+## Semantic highlighting
+
+On top of the TextMate grammar, a semantic token provider colors what the grammar cannot tell apart: calls to known functions (core Octave, control, symbolic, marked as `defaultLibrary`), the user's own functions, variables and parameters. Words after a command-syntax call (`pkg load control`, `hold on`) are left alone. Semantic highlighting is enabled by default for Octave files.
+
 ## Editing
 
 * <kbd>Ctrl</kbd>+<kbd>}</kbd> toggles `%` line comments (the physical key right of <kbd>{</kbd> on a Latin American layout; it is the <kbd>\\</kbd> key on US layouts).
 * Indentation follows blocks (`if`, `for`, `function`, ... and their `end`), and `%%` cells, functions, blocks and `%{ %}` comments can be folded.
+* `.m` files show the Octave logo in the explorer and tabs when the file icon theme has no icon of its own for Octave (as with the default Seti theme).
 * The outline shows `%%` cells and functions with their full range, so breadcrumbs and sticky scroll work.
 * Control snippets, all starting with `oc-`: `oc-header`, `oc-tf`, `oc-tfs`, `oc-ss`, `oc-response` (step/impulse), `oc-lsim`, `oc-bode`, `oc-nyquist`, `oc-rlocus`, `oc-margin`, `oc-feedback`, `oc-pzmap`, `oc-laplace`, `oc-ilaplace`, `oc-syms2tf`, `oc-section`. Each one was checked by running it in Octave 11.3.
 

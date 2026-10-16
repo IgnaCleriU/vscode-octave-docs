@@ -10,6 +10,13 @@ In this document, "the syntax" refers to the Octave M-code syntax definition ins
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-16
+
+### Added
+
+* Semantic highlighting for function calls, the user's functions, variables and parameters.
+* Octave logo as the file icon for `.m` files (from Octave's own `octave.svg`).
+
 ## [0.6.0] - 2026-10-16
 
 ### Added

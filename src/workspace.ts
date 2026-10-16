@@ -418,6 +418,78 @@ function scopeDefinitions(document: vscode.TextDocument, line: number): Map<stri
 	return defs;
 }
 
+/** An identifier in code, classified for semantic highlighting. */
+export interface CodeIdentifier {
+	line: number;
+	character: number;
+	name: string;
+	/** 'parameter' for function inputs/outputs, 'variable' for other definitions, else undefined. */
+	variable?: 'variable' | 'parameter';
+	/** True on the `function` line for the function's own name. */
+	declaration: boolean;
+	/** True for the words after a command-syntax call (`pkg load control`, `hold on`). */
+	commandArg: boolean;
+}
+
+/**
+ * Every identifier outside strings and comments, in one pass over the
+ * document, with the same variable rules as findVariable: a name is a
+ * variable from its first definition in the scope onwards.
+ */
+export function codeIdentifiers(document: vscode.TextDocument): CodeIdentifier[] {
+	const lines: string[] = [];
+	for (let i = 0; i < document.lineCount; i++) { lines.push(document.lineAt(i).text); }
+	const analysis = analyze(lines);
+	const scopes = new Map<number, Map<string, 'variable' | 'parameter'>>();
+	const scopeDefs = (scope: number): Map<string, 'variable' | 'parameter'> => {
+		let defs = scopes.get(scope);
+		if (!defs) {
+			defs = new Map();
+			if (scope >= 0) {
+				const f = analysis.frames[scope];
+				for (const name of [...f.outputs, ...f.params]) { defs.set(name, 'parameter'); }
+			}
+			scopes.set(scope, defs);
+		}
+		return defs;
+	};
+
+	const out: CodeIdentifier[] = [];
+	const ident = /[A-Za-z_]\w*/g;
+	for (let i = 0; i < lines.length; i++) {
+		const code = analysis.code[i];
+		const defs = scopeDefs(analysis.scopeOf[i]);
+		const found: { name: string; character: number }[] = [];
+		let m: RegExpExecArray | null;
+		ident.lastIndex = 0;
+		while ((m = ident.exec(code)) !== null) {
+			// Skip keywords, field access (s.name) and number suffixes (1e3)
+			if (KEYWORDS.has(m[0])) { continue; }
+			const before = code.slice(0, m.index).replace(/\s+$/, '');
+			if (before.endsWith('.') && !before.endsWith('..')) { continue; }
+			if (/[0-9.]$/.test(code.slice(0, m.index))) { continue; }
+			found.push({ name: m[0], character: m.index });
+		}
+		for (const name of new Set(found.map(f => f.name))) {
+			if (!defs.has(name) && definitionColumn(code, name) !== undefined) { defs.set(name, 'variable'); }
+		}
+		const header = /^\s*function\b/.test(code) ? parseHeader(code) : undefined;
+		// Command syntax: a word followed by a space and a bare word, e.g. `pkg load control`
+		const command = /^\s*([A-Za-z_]\w*)\s+[A-Za-z_'"-]/.exec(code);
+		const commandEnd = command && !KEYWORDS.has(command[1]) && !defs.has(command[1])
+			? command[0].length - 1 : -1;
+		for (const f of found) {
+			const declaration = header !== undefined && header.name === f.name;
+			out.push({
+				line: i, character: f.character, name: f.name,
+				variable: declaration ? undefined : defs.get(f.name), declaration,
+				commandArg: commandEnd >= 0 && f.character >= commandEnd,
+			});
+		}
+	}
+	return out;
+}
+
 /**
  * First definition of a variable in the scope of `line` (the enclosing
  * function, or the script outside functions), at or before that line.

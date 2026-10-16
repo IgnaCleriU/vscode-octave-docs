@@ -8,6 +8,7 @@ import { OctaveSignatureHelpProvider, SIGNATURE_RETRIGGERS, SIGNATURE_TRIGGERS }
 import { registerPkgDiagnostics } from './pkgDiagnostics';
 import { registerRunCommands } from './run';
 import { registerSyntaxCheck } from './syntaxCheck';
+import { LEGEND, OctaveSemanticTokensProvider } from './semanticTokens';
 import { OctaveDocumentSymbolProvider, OctaveFoldingRangeProvider } from './symbols';
 import {
 	OctaveDefinitionProvider, UserCompletionProvider, WorkspaceIndex, userFunctionHover, variableHover,
@@ -50,6 +51,8 @@ export function activate(context: vscode.ExtensionContext) {
 			retriggerCharacters: SIGNATURE_RETRIGGERS,
 		}),
 		vscode.languages.registerDefinitionProvider(OCTAVE, new OctaveDefinitionProvider(index)),
+		vscode.languages.registerDocumentSemanticTokensProvider(
+			OCTAVE, new OctaveSemanticTokensProvider(docs, index), LEGEND),
 	);
 
 	registerPkgDiagnostics(context, docs);
