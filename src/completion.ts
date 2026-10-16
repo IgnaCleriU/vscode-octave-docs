@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DocEntry, inComment, KEYWORDS, OctaveDocs, qualifiedName, rank, signatures } from './hover';
+import { DocEntry, inComment, KEYWORDS, formatSignature, LABEL_RE, OctaveDocs, qualifiedName, rank, signatures } from './hover';
 
 /** A call form parsed from a help signature line. */
 export interface CallForm {
@@ -12,8 +12,6 @@ export interface CallForm {
 	signature: string;
 }
 
-/** Signature prefix such as "Function File: " or "Method on @sym: ". */
-const LABEL_RE = /^([A-Z][A-Za-z -]*?(?: on @\w+)?):\s+/;
 
 function escapeRegExp(s: string): string {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -108,11 +106,10 @@ export function snippetText(form: CallForm): string {
 		: `${form.name}(${holes.join(', ')})`;
 }
 
-/** First line of the description that follows the signatures. */
+/** First paragraph of the Markdown description. */
 function summary(e: DocEntry): string {
-	const lines = e.text.split('\n');
-	const firstText = lines.findIndex(l => l.trim() !== '' && !l.startsWith(' -- '));
-	return firstText < 0 ? '' : lines[firstText].trim();
+	const first = e.markdown.split(/\n\s*\n/).find(p => p.trim() !== '' && !p.startsWith('```'));
+	return first ? first.trim() : '';
 }
 
 export class OctaveCompletionProvider implements vscode.CompletionItemProvider {
@@ -145,7 +142,7 @@ export class OctaveCompletionProvider implements vscode.CompletionItemProvider {
 			const main = entries[0];
 			const bare = new vscode.CompletionItem(name, kind(main));
 			bare.detail = `${qualifiedName(main)} — ${main.package}`;
-			bare.documentation = summary(main);
+			bare.documentation = new vscode.MarkdownString(summary(main));
 			this.plain.push(bare);
 		}
 	}
@@ -155,8 +152,9 @@ export class OctaveCompletionProvider implements vscode.CompletionItemProvider {
 		const it = new vscode.CompletionItem(form.name, kind(e));
 		it.insertText = new vscode.SnippetString(text);
 		it.filterText = form.name;
-		it.detail = `${form.signature}   [${e.package}${e.class ? ' @' + e.class : ''}]`;
-		it.documentation = new vscode.MarkdownString().appendCodeblock(form.signature, 'octave')
+		const code = formatSignature(form.name, form.signature);
+		it.detail = `${code}   [${e.package}${e.class ? ' @' + e.class : ''}]`;
+		it.documentation = new vscode.MarkdownString().appendCodeblock(code, 'octave')
 			.appendMarkdown(summary(e));
 		// Keep the order of the help: preferred entry first, simplest form first
 		const pad = (n: number) => String(n).padStart(3, '0');

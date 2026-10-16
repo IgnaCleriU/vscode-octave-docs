@@ -10,6 +10,14 @@ In this document, "the syntax" refers to the Octave M-code syntax definition ins
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-16
+
+### Changed
+
+* Hover docs are rendered as Markdown: highlighted signatures, parameter lists, highlighted examples and a package footer.
+* "Show full help" opens the Markdown preview instead of plain text.
+* Completion details show signatures as code (lowercase arguments, no space before the parenthesis).
+
 ## [0.4.0] - 2026-10-16
 
 ### Added

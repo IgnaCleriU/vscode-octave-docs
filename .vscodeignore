@@ -16,3 +16,4 @@ Makefile
 .DS_Store
 .editorconfig
 scripts/
+build/

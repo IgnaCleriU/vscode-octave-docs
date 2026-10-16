@@ -4,7 +4,7 @@ A fork of [Octave Hacking](https://github.com/apjanke/vscode-octave-hacking) tha
 
 ## Hover documentation
 
-Hovering over a function shows its help text (the same as `help`), with a link to open the full text in a side tab. If the name has several definitions (for example, core `diff` and `@sym/diff`), all of them are listed.
+Hovering over a function shows its help laid out like other languages' docs: the call signatures in a highlighted Octave code block, then the description in Markdown (parameters as a list, examples as highlighted code blocks), and the package it comes from. A link opens the full help in the Markdown preview. If the name has several definitions (for example, core `diff` and `@sym/diff`), all of them are listed.
 
 ## Completion with parameter tab stops
 
@@ -32,8 +32,11 @@ The control-structure snippets (`for`, `while`, `if`, `switch`, `do`, `try`, `fu
 The help is precompiled into `docs/octave-docs.json`, so hover and completion are instant and do not need Octave at runtime. To regenerate it, with both packages installed:
 
 ```sh
-npm run build-docs   # octave --no-gui --quiet scripts/build-docs.m (takes a few minutes)
+npm run build-docs       # Octave + Markdown conversion (takes about 7 minutes)
+npm run build-markdown   # only the Markdown conversion, from build/octave-help.json
 ```
+
+`scripts/build-docs.m` asks Octave for each help text rendered both to plain text and to HTML and writes `build/octave-help.json`. `scripts/build-markdown.js` converts the HTML to Markdown with [Turndown](https://github.com/mixmark-io/turndown) and writes `docs/octave-docs.json`.
 
 The list of core functions is at the end of `scripts/build-docs.m`.
 

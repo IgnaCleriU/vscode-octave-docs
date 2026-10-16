@@ -11,6 +11,8 @@ export interface DocEntry {
 	package: string;
 	/** Help text already rendered to plain text, as `help` prints it. */
 	text: string;
+	/** Description (without signatures) converted to Markdown. */
+	markdown: string;
 }
 
 interface DocIndex {
@@ -22,8 +24,11 @@ interface DocIndex {
 export const HELP_SCHEME = 'octave-help';
 export const SHOW_HELP_COMMAND = 'octaveDocs.showFullHelp';
 
-/** Lines of help shown in the hover before truncating. */
-const MAX_HOVER_LINES = 30;
+/** Lines of the description shown in the hover before truncating. */
+const MAX_HOVER_LINES = 40;
+
+/** Signature prefix such as "Function File: " or "Method on @sym: ". */
+export const LABEL_RE = /^([A-Z][A-Za-z -]*?(?: on @\w+)?):\s+/;
 
 /** Reserved words: no hover or completion for them, even if they have help. */
 export const KEYWORDS = new Set([
@@ -89,9 +94,41 @@ export function signatures(e: DocEntry): string[] {
 	return e.text.split('\n').filter(l => l.startsWith(' -- ')).map(l => l.trim());
 }
 
+/**
+ * Turns a help signature into code: " -- Function File: [Y, K] = rlocus (SYS)"
+ * becomes "[y, k] = rlocus(sys)". Help prints arguments in uppercase.
+ */
+export function formatSignature(name: string, line: string): string {
+	let sig = line.replace(/^\s*--\s*/, '').replace(LABEL_RE, '').trim();
+	sig = sig.replace(/\b[A-Z][A-Z0-9_]*\b/g, w => (w === name ? w : w.toLowerCase()));
+	return sig.split(`${name} (`).join(`${name}(`);
+}
+
+/** Signatures of an entry as an Octave code block. */
+function signatureBlock(e: DocEntry): string {
+	const sigs = signatures(e).map(l => formatSignature(e.name, l));
+	return sigs.length > 0 ? sigs.join('\n') : e.name;
+}
+
+/** Cuts Markdown after `max` lines without leaving a code fence open. */
+function truncateMarkdown(md: string, max: number): { text: string; cut: boolean } {
+	const lines = md.split('\n');
+	if (lines.length <= max) { return { text: md, cut: false }; }
+	const kept = lines.slice(0, max);
+	const fences = kept.filter(l => l.trimStart().startsWith('```')).length;
+	if (fences % 2 === 1) { kept.push('```'); }
+	return { text: kept.join('\n'), cut: true };
+}
+
+/** Full help of an entry as a Markdown document. */
+function fullMarkdown(e: DocEntry): string {
+	return `# ${qualifiedName(e)}\n\n*Package: ${e.package}*\n\n` +
+		'```octave\n' + signatureBlock(e) + '\n```\n\n' + e.markdown + '\n';
+}
+
 function helpUri(e: DocEntry): vscode.Uri {
 	const cls = e.class || '_';
-	return vscode.Uri.from({ scheme: HELP_SCHEME, path: `/${cls}/${e.name}.txt` });
+	return vscode.Uri.from({ scheme: HELP_SCHEME, path: `/${cls}/${e.name}.md` });
 }
 
 function commandLink(label: string, e: DocEntry): string {
@@ -138,20 +175,27 @@ export class OctaveHoverProvider implements vscode.HoverProvider {
 		const md = new vscode.MarkdownString();
 		md.isTrusted = true;
 
-		md.appendMarkdown(`**${qualifiedName(main)}** — package \`${main.package}\`\n\n`);
+		// Same layout as other languages' docs: signatures, description, footer
+		md.appendCodeblock(signatureBlock(main), 'octave');
+		md.appendMarkdown('\n---\n\n');
 
-		const lines = main.text.split('\n');
-		const shown = lines.slice(0, MAX_HOVER_LINES).join('\n');
-		md.appendCodeblock(shown, 'text');
-		const more = lines.length > MAX_HOVER_LINES ? ' (continues)' : '';
-		md.appendMarkdown(`\n${commandLink('Show full help' + more, main)}\n`);
+		const body = truncateMarkdown(main.markdown, MAX_HOVER_LINES);
+		md.appendMarkdown(body.text + '\n\n---\n\n');
+
+		const where = main.class && main.class !== main.name
+			? `\`${main.package}\` · method of \`@${main.class}\``
+			: `\`${main.package}\``;
+		const more = body.cut ? 'Show full help (continues)' : 'Show full help';
+		md.appendMarkdown(`*${where}* · ${commandLink(more, main)}\n`);
 
 		if (others.length > 0) {
-			md.appendMarkdown('\n---\n\n**Also defined as:**\n\n');
+			md.appendMarkdown('\n**Also defined as:**\n\n');
 			for (const e of others) {
-				const sig = signatures(e)[0] ?? '';
+				const sig = signatures(e)[0];
 				md.appendMarkdown(`- ${commandLink(qualifiedName(e), e)} (\`${e.package}\`)`);
-				if (sig) { md.appendMarkdown(` — \`${sig.replace(/`/g, "'")}\``); }
+				if (sig) {
+					md.appendMarkdown(` — \`${formatSignature(e.name, sig).replace(/`/g, "'")}\``);
+				}
 				md.appendMarkdown('\n');
 			}
 		}
@@ -165,17 +209,23 @@ export class OctaveHelpContentProvider implements vscode.TextDocumentContentProv
 	constructor(private docs: OctaveDocs) {}
 
 	provideTextDocumentContent(uri: vscode.Uri): string {
-		const m = uri.path.match(/^\/([^/]+)\/(.+)\.txt$/);
+		const m = uri.path.match(/^\/([^/]+)\/(.+)\.md$/);
 		if (!m) { return ''; }
 		const cls = m[1] === '_' ? '' : m[1];
 		const e = this.docs.find(m[2], cls);
 		if (!e) { return `No help found for ${m[2]}.`; }
-		return `${qualifiedName(e)}  [${e.package}]\n\n${e.text}\n`;
+		return fullMarkdown(e);
 	}
 }
 
+/** Opens the full help rendered by VS Code's Markdown preview. */
 export async function showFullHelp(name: string, cls: string): Promise<void> {
-	const uri = helpUri({ name, class: cls, package: '', text: '' });
-	const doc = await vscode.workspace.openTextDocument(uri);
-	await vscode.window.showTextDocument(doc, { preview: true, viewColumn: vscode.ViewColumn.Beside });
+	const uri = helpUri({ name, class: cls, package: '', text: '', markdown: '' });
+	try {
+		await vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
+	} catch {
+		// Without the built-in Markdown extension, show the source instead
+		const doc = await vscode.workspace.openTextDocument(uri);
+		await vscode.window.showTextDocument(doc, { preview: true, viewColumn: vscode.ViewColumn.Beside });
+	}
 }

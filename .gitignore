@@ -20,3 +20,6 @@ Thumbs.db
 # Octave Hacking specific ignores
 
 dist/
+
+# Raw help written by scripts/build-docs.m
+build/

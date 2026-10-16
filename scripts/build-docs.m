@@ -2,12 +2,13 @@
 ##
 ## Walks the functions of the control and symbolic packages (including the
 ## methods of their classes: @tf, @ss, @lti, @sym, ...) and a curated list
-## of core Octave functions. For each one it stores the `help` text already
-## rendered to plain text, so the extension never has to call Octave on
-## hover or completion.
+## of core Octave functions. For each one it stores the `help` text rendered
+## both to plain text and to HTML, so the extension never has to call Octave
+## on hover or completion. The HTML goes to build/octave-help.json and is
+## turned into Markdown by scripts/build-markdown.js.
 ##
 ## Usage, from the repository root:
-##   octave --no-gui --quiet scripts/build-docs.m
+##   npm run build-docs
 
 1;
 
@@ -20,8 +21,10 @@ function entries = add_entry (entries, name, cls, pkgname, query)
   if (isempty (strtrim (text)))
     return;
   endif
+  html = "";
   if (strcmp (fmt, "texinfo"))
     try
+      html = html_body (__makeinfo__ (text, "html"));
       text = __makeinfo__ (text, "plain text");
     catch
       return;
@@ -30,7 +33,13 @@ function entries = add_entry (entries, name, cls, pkgname, query)
   text = regexprep (text, '\r', '');
   text = regexprep (text, '\n{3,}', "\n\n");
   entries{end+1} = struct ("name", name, "class", cls, "package", pkgname,
-                           "text", strtrim_right (text));
+                           "text", strtrim_right (text), "html", html);
+endfunction
+
+## Keeps only what is inside <body>; scripts/build-markdown.js converts it.
+function body = html_body (html)
+  body = regexprep (html, '^.*<body>|</body>.*$', '');
+  body = strtrim (body);
 endfunction
 
 function s = strtrim_right (s)
@@ -156,10 +165,10 @@ docs.octaveVersion = OCTAVE_VERSION;
 docs.generated = datestr (now, "yyyy-mm-dd");
 docs.entries = [entries{:}];
 
-if (! exist ("docs", "dir"))
-  mkdir ("docs");
+if (! exist ("build", "dir"))
+  mkdir ("build");
 endif
-fid = fopen ("docs/octave-docs.json", "w");
+fid = fopen ("build/octave-help.json", "w");
 fputs (fid, jsonencode (docs));
 fclose (fid);
-printf ("%d entries written to docs/octave-docs.json\n", numel (entries));
+printf ("%d entries written to build/octave-help.json\n", numel (entries));
